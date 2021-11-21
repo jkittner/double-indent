@@ -211,6 +211,4 @@ def test_noop(src):
 )
 def test_fixes(src, exp):
     new = _fix_src(src, indent=4)
-    print(f'expected:{exp!r}')
-    print(f'got:     {new!r}')
     assert new == exp
