@@ -67,8 +67,9 @@ def _fix_indent(
                         (
                             tokens[idx + 2].name == 'OP' and
                             (
-                                tokens[idx + 2].src ==
-                                '*' or tokens[idx + 2].src == '/'
+                                tokens[idx + 2].src == '*' or
+                                tokens[idx + 2].src == '**' or
+                                tokens[idx + 2].src == '/'
                             )
                         )
                     )

@@ -62,7 +62,7 @@ def f(x = 5, x = 6)
             id='one line def type annotations',
         ),
         pytest.param(
-            'def f(\n'
+            'def f(  \n'
             '        a,\n'
             '        b,\n'
             '):pass\n',
@@ -188,6 +188,40 @@ def test_noop(src):
             '        a,\n'
             '        *,\n'
             '        b,\n'
+            '):\n'
+            '    pass\n',
+            id='incorrect kwarg only',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    a,\n'
+            '    *,\n'
+            '    b,\n'
+            '    **kwargs,'
+            '):\n'
+            '    pass\n',
+            'def f(\n'
+            '        a,\n'
+            '        *,\n'
+            '        b,\n'
+            '        **kwargs,'
+            '):\n'
+            '    pass\n',
+            id='incorrect kwarg only',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    a,\n'
+            '    *,\n'
+            '    b,\n'
+            '    *args,'
+            '):\n'
+            '    pass\n',
+            'def f(\n'
+            '        a,\n'
+            '        *,\n'
+            '        b,\n'
+            '        *args,'
             '):\n'
             '    pass\n',
             id='incorrect kwarg only',
