@@ -1,6 +1,6 @@
 -   id: double-indent
     name: double indent
-    description: Automatically add indent function and method definitions twice
+    description: Automatically indent function and method definitions twice
     entry: double-indent
     language: python
     types: [python]
