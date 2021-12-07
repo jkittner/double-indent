@@ -35,7 +35,7 @@ repos:
     -   id: add-trailing-comma
         args: [--py36-plus]
 -   repo: https://github.com/theendlessriver13/double-indent
-    rev: 0.1.0
+    rev: 0.1.2
     hooks:
       - id: double-indent
 -   repo: https://github.com/asottile/pyupgrade
