@@ -102,7 +102,7 @@ def _fix_src(contents_text: str, indent: int) -> str:
 
 def _fix_file(filename: str, args: argparse.Namespace) -> int:
     if filename == '-':
-        contents = getattr(sys.stdin, 'buffer', sys.stdin).read().decode()
+        contents = sys.stdin.buffer.read().decode()
     else:
         # TODO: maybe read and write as binary
         with open(filename, 'rb') as f:
