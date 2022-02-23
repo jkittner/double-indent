@@ -62,7 +62,7 @@ def f(x = 5, x = 6)
             '    a, b,\n'
             '): pass\n',
             id='args on one line',
-            marks=pytest.mark.xfail(reason='no indent multple args, 1 line'),
+            marks=pytest.mark.xfail(reason='no indent multiple args, 1 line'),
         ),
         pytest.param(
             'def f(a, b) -> bool: pass\n',

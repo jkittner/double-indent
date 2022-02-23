@@ -4,6 +4,7 @@ import argparse
 import sys
 from typing import Sequence
 
+from tokenize_rt import reversed_enumerate
 from tokenize_rt import src_to_tokens
 from tokenize_rt import Token
 from tokenize_rt import tokens_to_src
@@ -85,7 +86,7 @@ def _fix_indent(
 
 def _fix_src(contents_text: str, indent: int) -> str:
     tokens = src_to_tokens(contents_text)
-    for idx, token in enumerate(tokens):
+    for idx, token in reversed_enumerate(tokens):
         if token.src == 'def' and _is_multiline_def(tokens, idx):
             # we found the start of a a FunctionDef
             start_def, end_def = _find_outer_parens(tokens[idx:])
@@ -104,7 +105,6 @@ def _fix_file(filename: str, args: argparse.Namespace) -> int:
     if filename == '-':
         contents = sys.stdin.buffer.read().decode()
     else:
-        # TODO: maybe read and write as binary
         with open(filename, 'rb') as f:
             contents = f.read().decode()
 
