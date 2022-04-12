@@ -1,9 +1,6 @@
 *.egg-info
 .coverage
-.mypy_cache
-.pytest_cache
 .tox
 .vscode
-__pycache__
+*.pyc
 htmlcov
-venv

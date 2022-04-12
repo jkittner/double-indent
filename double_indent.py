@@ -12,8 +12,8 @@ from tokenize_rt import tokens_to_src
 
 def _find_outer_parens(tokens: list[Token]) -> tuple[int, int]:
     paren_idx = 0
-    idx_opening: list[int] = []
-    idx_closing: list[int] = []
+    idx_opening = []
+    idx_closing = []
     for idx, token in enumerate(tokens):
         if token.src == '(':
             idx_opening.append(idx)
