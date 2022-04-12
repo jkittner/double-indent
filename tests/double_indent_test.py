@@ -248,6 +248,21 @@ def test_noop(src):
             '        pass\n',
             id='incorrect class method def',
         ),
+        pytest.param(
+            'def f(\n'
+            '    a,\n'
+            '    #  comment,\n'
+            '    b,\n'
+            '):\n'
+            '    pass\n',
+            'def f(\n'
+            '        a,\n'
+            '        #  comment,\n'
+            '        b,\n'
+            '):\n'
+            '    pass\n',
+            id='comment in function definition',
+        ),
     ),
 )
 def test_fixes(src, exp):
