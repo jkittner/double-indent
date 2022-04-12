@@ -32,7 +32,7 @@ Sample `.pre-commit-config.yaml`:
 
 ```yaml
 - repo: https://github.com/theendlessriver13/double-indent
-  rev: 0.1.2
+  rev: 0.1.3
   hooks:
     - id: double-indent
 ```
