@@ -63,6 +63,7 @@ def _fix_indent(
                     # another argument must follow
                     (
                         tokens[idx + 2].name == 'NAME' or
+                        tokens[idx + 2].name == 'COMMENT' or
                         # if not a named argument, the operator for positional
                         # or named only arguments must follow
                         (
