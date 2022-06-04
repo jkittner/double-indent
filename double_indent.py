@@ -89,6 +89,12 @@ def _fix_src(contents_text: str, indent: int) -> str:
     tokens = src_to_tokens(contents_text)
     for idx, token in reversed_enumerate(tokens):
         if token.src == 'def' and _is_multiline_def(tokens, idx):
+            offset = token.utf8_byte_offset
+            # check if it's an async def, then the async keyword does not
+            # change the offset, like a nested function would
+            if idx >= 2 and tokens[idx-2].src == 'async':
+                offset = tokens[idx-2].utf8_byte_offset
+
             # we found the start of a a FunctionDef
             start_def, end_def = _find_outer_parens(tokens[idx:])
             _fix_indent(
@@ -96,7 +102,7 @@ def _fix_src(contents_text: str, indent: int) -> str:
                 start=start_def + idx,
                 end=end_def + idx,
                 indent=indent,
-                offset=token.utf8_byte_offset,
+                offset=offset,
             )
 
     return tokens_to_src(tokens)

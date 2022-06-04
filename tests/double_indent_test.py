@@ -117,11 +117,16 @@ def f(x = 5, x = 6)
             'def f(\n'
             '        x,\n'
             '        y,\n'
-            ');\n'
+            '):\n'
             '    def ff(\n'
             '            y,\n'
             '    ): pass\n',
             id='correct nested function def',
+        ),
+        pytest.param(
+            'def f():\n'
+            '    pass\n',
+            id='function without args',
         ),
     ),
 )
@@ -214,24 +219,22 @@ def test_noop(src):
             '        **kwargs,'
             '):\n'
             '    pass\n',
-            id='incorrect kwarg only',
+            id='incorrect kwarg only **kwargs',
         ),
         pytest.param(
             'def f(\n'
             '    a,\n'
-            '    *,\n'
             '    b,\n'
             '    *args,'
             '):\n'
             '    pass\n',
             'def f(\n'
             '        a,\n'
-            '        *,\n'
             '        b,\n'
             '        *args,'
             '):\n'
             '    pass\n',
-            id='incorrect kwarg only',
+            id='incorrect *args',
         ),
         pytest.param(
             'class C:\n'
@@ -262,6 +265,53 @@ def test_noop(src):
             '):\n'
             '    pass\n',
             id='comment in function definition',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    x,\n'
+            '    y,\n'
+            '):\n'
+            '    def ff(\n'
+            '        y,\n'
+            '    ): pass\n',
+            'def f(\n'
+            '        x,\n'
+            '        y,\n'
+            '):\n'
+            '    def ff(\n'
+            '            y,\n'
+            '    ): pass\n',
+            id='nested function def',
+        ),
+        pytest.param(
+            'async def f(\n'
+            '    x,\n'
+            '    y,\n'
+            '):\n'
+            '    async def ff(\n'
+            '        y,\n'
+            '    ): pass\n',
+            'async def f(\n'
+            '        x,\n'
+            '        y,\n'
+            '):\n'
+            '    async def ff(\n'
+            '            y,\n'
+            '    ): pass\n',
+            id='nested async function def',
+        ),
+        pytest.param(
+            'async def f(\n'
+            '    a,\n'
+            '    b,\n'
+            '):\n'
+            '    pass\n',
+            'async def f(\n'
+            '        a,\n'
+            '        b,\n'
+            '):\n'
+            '    pass\n',
+            id='async function def',
         ),
     ),
 )
