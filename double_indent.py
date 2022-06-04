@@ -1,50 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import sys
 from typing import Sequence
 
+from tokenize_rt import Offset
 from tokenize_rt import reversed_enumerate
 from tokenize_rt import src_to_tokens
 from tokenize_rt import Token
 from tokenize_rt import tokens_to_src
-
-
-def _find_outer_parens(tokens: list[Token]) -> tuple[int, int]:
-    paren_idx = 0
-    idx_opening = []
-    idx_closing = []
-    for idx, token in enumerate(tokens):
-        if token.src == '(':
-            idx_opening.append(idx)
-            paren_idx += 1
-        elif token.src == ')':
-            idx_closing.append(idx)
-            paren_idx -= 1
-            # paren_idx must be zero if we have the last match
-            if paren_idx == 0:
-                return idx_opening[0], idx_closing[-1]
-    else:
-        raise AssertionError('past end did not find matching parenthesis')
-
-
-def _is_multiline_def(tokens: list[Token], start: int) -> bool:
-    end = start + 1
-    token_len = len(tokens)
-    while end < token_len:
-        if (
-                tokens[end].name == 'OP' and tokens[end].src == '(' and
-                # what about trailing ws?
-                tokens[end + 1].name == 'NL'
-        ):
-            return True
-        # end of function def found, so not multiline
-        elif tokens[end].name == 'OP' and tokens[end].src == ':':
-            return False
-
-        end += 1
-    else:
-        raise AssertionError('past end')
 
 
 def _fix_indent(
@@ -85,32 +50,64 @@ def _fix_indent(
         idx += 1
 
 
-def _fix_src(contents_text: str, indent: int) -> str:
+def _fix_src(contents_text: str, fname: str, indent: int) -> str:
+    func_defs: set[Offset] = set()
+    tree = ast.parse(contents_text, filename=fname)
+    for node in ast.walk(tree):
+        if (
+                (
+                    isinstance(node, ast.FunctionDef) or
+                    isinstance(node, ast.AsyncFunctionDef)
+                ) and
+                _has_args(node)
+        ):
+            func_defs.add(Offset(node.lineno, node.col_offset))
+
     tokens = src_to_tokens(contents_text)
     for idx, token in reversed_enumerate(tokens):
-        if token.src == 'def' and _is_multiline_def(tokens, idx):
-            # we found the start of a a FunctionDef
-            start_def, end_def = _find_outer_parens(tokens[idx:])
-            _fix_indent(
-                tokens,
-                start=start_def + idx,
-                end=end_def + idx,
-                indent=indent,
-                offset=token.utf8_byte_offset,
-            )
+        if token.offset in func_defs:
+            depth = 0
+            i = idx
+            while depth or tokens[i].src != ':':
+                if tokens[i].src == '(':
+                    depth += 1
+                elif tokens[i].src == ')':
+                    depth -= 1
+                i += 1
+
+            multiline_def = tokens[i].line > tokens[idx].line
+            if multiline_def:
+                _fix_indent(
+                    tokens,
+                    start=idx,
+                    end=i,
+                    indent=indent,
+                    offset=token.utf8_byte_offset,
+                )
 
     return tokens_to_src(tokens)
 
 
+def _has_args(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    if any((
+        node.args.posonlyargs,
+        node.args.args,
+        node.args.kwonlyargs,
+    )):
+        return True
+    else:
+        return False
+
+
 def _fix_file(filename: str, args: argparse.Namespace) -> int:
     if filename == '-':
-        contents = sys.stdin.buffer.read().decode()
+        contents = sys.stdin.buffer.read().decode(encoding='UTF-8')
     else:
         with open(filename, 'rb') as f:
-            contents = f.read().decode()
+            contents = f.read().decode(encoding='UTF-8')
 
     contents_orig = contents_text = contents
-    contents_text = _fix_src(contents_text, indent=args.indent)
+    contents_text = _fix_src(contents_text, fname=filename, indent=args.indent)
 
     if filename == '-':
         print(contents_text, end='')
