@@ -3,9 +3,13 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Sequence
+from typing import Union
 
-from tokenize_rt import Token, reversed_enumerate, src_to_tokens, tokens_to_src
+from tokenize_rt import reversed_enumerate
+from tokenize_rt import src_to_tokens
+from tokenize_rt import Token
+from tokenize_rt import tokens_to_src
 
 
 def _find_outer_parens(tokens: list[Token]) -> tuple[int, int]:
@@ -126,7 +130,7 @@ def _fix_file(filename: Path, args: argparse.Namespace) -> int:
     return contents_text != contents_orig
 
 
-def _process_file_or_directory(file_or_dir: Union[str, Path], args: argparse.Namespace) -> int:
+def _process_file_or_directory(file_or_dir: str | Path, args: argparse.Namespace) -> int:
     path = Path(file_or_dir)
     ret = 0
     if path.is_dir():
