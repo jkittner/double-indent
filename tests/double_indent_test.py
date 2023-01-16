@@ -65,6 +65,14 @@ def f(x = 5, x = 6)
             marks=pytest.mark.xfail(reason='no indent multiple args, 1 line'),
         ),
         pytest.param(
+            'def f(\n'
+            '        a = [\n'
+            '            "a",\n'
+            '        ],\n'
+            '): pass\n',
+            id='multiline default args',
+        ),
+        pytest.param(
             'def f(a, b) -> bool: pass\n',
             id='one line def type annotations',
         ),
@@ -313,6 +321,21 @@ def test_noop(src):
             '    pass\n',
             id='async function def',
         ),
+        pytest.param(
+            'def f(\n'
+            '    a = [\n'
+            '        "a",\n'
+            '    ],\n'
+            '): pass\n',
+            'def f(\n'
+            '        a = [\n'
+            '            "a",\n'
+            '        ],\n'
+            '): pass\n',
+            id='multiline default args are indented',
+            marks=pytest.mark.xfail(reason='not implemented yet'),
+        ),
+
     ),
 )
 def test_fixes(src, exp):
