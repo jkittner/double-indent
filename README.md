@@ -1,6 +1,6 @@
-[![ci](https://github.com/theendlessriver13/double-indent/workflows/ci/badge.svg)](https://github.com/theendlessriver13/double-indent/actions?query=workflow%3Aci)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/theendlessriver13/double-indent/master.svg)](https://results.pre-commit.ci/latest/github/theendlessriver13/double-indent/master)
-[![codecov](https://codecov.io/gh/theendlessriver13/double-indent/branch/master/graph/badge.svg)](https://codecov.io/gh/theendlessriver13/double-indent)
+[![ci](https://github.com/jkittner/double-indent/workflows/ci/badge.svg)](https://github.com/jkittner/double-indent/actions?query=workflow%3Aci)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/jkittner/double-indent/master.svg)](https://results.pre-commit.ci/latest/github/jkittner/double-indent/master)
+[![codecov](https://codecov.io/gh/jkittner/double-indent/branch/master/graph/badge.svg)](https://codecov.io/gh/jkittner/double-indent)
 
 # double-indent
 
@@ -31,7 +31,7 @@ See [pre-commit](https://pre-commit.com) for instructions
 Sample `.pre-commit-config.yaml`:
 
 ```yaml
-- repo: https://github.com/theendlessriver13/double-indent
+- repo: https://github.com/jkittner/double-indent
   rev: 0.1.4
   hooks:
     - id: double-indent
