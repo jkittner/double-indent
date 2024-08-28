@@ -1,6 +1,5 @@
 [![ci](https://github.com/jkittner/double-indent/workflows/ci/badge.svg)](https://github.com/jkittner/double-indent/actions?query=workflow%3Aci)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/jkittner/double-indent/master.svg)](https://results.pre-commit.ci/latest/github/jkittner/double-indent/master)
-[![codecov](https://codecov.io/gh/jkittner/double-indent/branch/master/graph/badge.svg)](https://codecov.io/gh/jkittner/double-indent)
 
 # double-indent
 

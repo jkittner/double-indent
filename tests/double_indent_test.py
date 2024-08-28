@@ -1,53 +1,6 @@
 import pytest
-from tokenize_rt import src_to_tokens
 
-from double_indent import _find_outer_parens
 from double_indent import _fix_src
-from double_indent import _is_multiline_def
-
-
-def test_find_matching_parens():
-    f = '''\
-def f(
-    x = (5, 6),
-    x = 6,
-):
-    pass
-'''
-    tokens = src_to_tokens(f)
-    assert _find_outer_parens(tokens) == (3, 26)
-
-
-def test_is_multiline_def_true():
-    f = '''\
-def f(
-    x = 5,
-    x = 6,
-):
-    pass
-'''
-    tokens = src_to_tokens(f)
-    assert _is_multiline_def(tokens, 0) is True
-
-
-def test_is_multiline_def_false():
-    f = '''\
-def f(x = 5, x = 6):
-    pass
-'''
-    tokens = src_to_tokens(f)
-    assert _is_multiline_def(tokens, 0) is False
-
-
-def test_is_multiline_def_past_end():
-    f = '''\
-def f(x = 5, x = 6)
-'''
-    with pytest.raises(AssertionError) as exc_info:
-        tokens = src_to_tokens(f)
-        _is_multiline_def(tokens, 0)
-
-    assert exc_info.value.args[0] == 'past end'
 
 
 @pytest.mark.parametrize(
@@ -106,6 +59,24 @@ def f(x = 5, x = 6)
         ),
         pytest.param(
             'def f(\n'
+            '        *,\n'
+            '        a,\n'
+            '        b,\n'
+            '):\n'
+            '    pass\n',
+            id='correct kwarg only as first arg',
+        ),
+        pytest.param(
+            'def f(\n'
+            '        *,\n'
+            '        a,\n'
+            '        b,\n'
+            '):\n'
+            '    pass\n',
+            id='correct posonly as first arg',
+        ),
+        pytest.param(
+            'def f(\n'
             '        a,\n'
             '        /,\n'
             '        b,\n'
@@ -127,6 +98,45 @@ def f(x = 5, x = 6)
             'def f():\n'
             '    pass\n',
             id='function without args',
+        ),
+        pytest.param(
+            'def f(\n'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '        z=1,\n'
+            '): pass\n',
+            id='function with multiline default',
+        ),
+        pytest.param(
+            'def f(\n'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '        *,\n'
+            '        z=1,\n'
+            '): pass\n',
+            id='function with multiline default, kwonly',
+        ),
+        pytest.param(
+            'def f(\n'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '        /,\n'
+            '        z=1,\n'
+            '): pass\n',
+            id='function with multiline default, posonly',
+        ),
+        pytest.param(
+            'def f(\n'
+            '        a: str,\n'
+            '        b: dict[\n'
+            '            str, \n'
+            '            str, \n'
+            '        ]\n,'
+            '): pass\n',
+            id='function has multiline type annotation',
         ),
     ),
 )
@@ -312,6 +322,87 @@ def test_noop(src):
             '):\n'
             '    pass\n',
             id='async function def',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    x=y(\n'
+            '        foo=bar,\n'
+            '    ),\n'
+            '    z=1,\n'
+            '): pass\n',
+            'def f(\n'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '        z=1,\n'
+            '): pass\n',
+            id='function with multiline default',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    z=1,\n'
+            '    x=y(\n'
+            '        foo=bar,\n'
+            '    ),\n'
+            '): pass\n',
+            'def f(\n'
+            '        z=1,\n'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '): pass\n',
+            id='function with multiline default last arg',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    z=1,\n'
+            '    *\n,'
+            '    x=y(\n'
+            '        foo=bar,\n'
+            '    ),\n'
+            '): pass\n',
+            'def f(\n'
+            '        z=1,\n'
+            '        *\n,'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '): pass\n',
+            id='function with multiline default, kwonlyargs',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    z=1,\n'
+            '    /\n,'
+            '    x=y(\n'
+            '        foo=bar,\n'
+            '    ),\n'
+            '): pass\n',
+            'def f(\n'
+            '        z=1,\n'
+            '        /\n,'
+            '        x=y(\n'
+            '            foo=bar,\n'
+            '        ),\n'
+            '): pass\n',
+            id='function with multiline default, posonly',
+        ),
+        pytest.param(
+            'def f(\n'
+            '    a: str,\n'
+            '    b: dict[\n'
+            '        str, \n'
+            '        str, \n'
+            '    ]\n,'
+            '): pass\n',
+            'def f(\n'
+            '        a: str,\n'
+            '        b: dict[\n'
+            '            str, \n'
+            '            str, \n'
+            '        ]\n,'
+            '): pass\n',
+            id='function with multiline type annotation',
         ),
     ),
 )

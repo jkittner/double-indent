@@ -23,7 +23,3 @@ jobs:
         python -m pip install --upgrade tox
     - name: run
       run: tox -e py
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        file: ./coverage.xml

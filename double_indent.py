@@ -1,50 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import sys
 from typing import Sequence
 
+from tokenize_rt import Offset
 from tokenize_rt import reversed_enumerate
 from tokenize_rt import src_to_tokens
 from tokenize_rt import Token
 from tokenize_rt import tokens_to_src
-
-
-def _find_outer_parens(tokens: list[Token]) -> tuple[int, int]:
-    paren_idx = 0
-    idx_opening = []
-    idx_closing = []
-    for idx, token in enumerate(tokens):
-        if token.src == '(':
-            idx_opening.append(idx)
-            paren_idx += 1
-        elif token.src == ')':
-            idx_closing.append(idx)
-            paren_idx -= 1
-            # paren_idx must be zero if we have the last match
-            if paren_idx == 0:
-                return idx_opening[0], idx_closing[-1]
-    else:
-        raise AssertionError('past end did not find matching parenthesis')
-
-
-def _is_multiline_def(tokens: list[Token], start: int) -> bool:
-    end = start + 1
-    token_len = len(tokens)
-    while end < token_len:
-        if (
-                tokens[end].name == 'OP' and tokens[end].src == '(' and
-                # what about trailing ws?
-                tokens[end + 1].name == 'NL'
-        ):
-            return True
-        # end of function def found, so not multiline
-        elif tokens[end].name == 'OP' and tokens[end].src == ':':
-            return False
-
-        end += 1
-    else:
-        raise AssertionError('past end')
 
 
 def _fix_indent(
@@ -53,17 +18,20 @@ def _fix_indent(
         end: int,
         indent: int,
         offset: int,
+        lines_to_check: dict[int, int | None],
 ) -> None:
     idx = start
+    line_to_indent: set[int] = set()
     while idx < end:
         if tokens[idx].name == 'NL':
             if (
                     tokens[idx + 1].name == 'UNIMPORTANT_WS' and
-                    len(tokens[idx + 1].src) != (indent * 2) + offset and
+                    len(tokens[idx + 1].src) < (indent * 2) + offset and
                     # another argument must follow
                     (
                         tokens[idx + 2].name == 'NAME' or
                         tokens[idx + 2].name == 'COMMENT' or
+                        tokens[idx + 2].name == 'STRING' or
                         # if not a named argument, the operator for positional
                         # or named only arguments must follow
                         (
@@ -78,32 +46,83 @@ def _fix_indent(
             ):
                 new_indent = ' ' * ((indent * 2) + offset)
                 tokens[idx + 1] = tokens[idx + 1]._replace(src=new_indent)
+                # we indented an argument. We need to check if there is more to
+                # to the argument i.e. multiline defaults
+                if tokens[idx + 1].line in lines_to_check:
+                    end_of_arg = lines_to_check[tokens[idx + 1].line]
+                    if end_of_arg is not None:
+                        line_to_indent |= set(
+                            range(tokens[idx + 1].line, end_of_arg + 1),
+                        )
+                    else:
+                        line_to_indent |= set(
+                            range(tokens[idx + 1].line, tokens[end].line - 1),
+                        )
+
             elif tokens[idx + 1].name == 'NAME':
                 # was not indented at all
                 ws = Token('UNIMPORTANT_WS', src=' ' * ((indent * 2) + offset))
                 tokens.insert(idx + 1, ws)
+            elif tokens[idx].line in line_to_indent:
+                # check if we are between some function args?
+                current_indent = tokens[idx + 1].src
+                new_indent = current_indent + ' ' * indent
+                tokens[idx + 1] = tokens[idx + 1]._replace(src=new_indent)
+
         idx += 1
 
 
 def _fix_src(contents_text: str, indent: int) -> str:
+    func_defs: set[Offset] = set()
+    lines_to_check: dict[int, int | None] = {}
+    tree = ast.parse(contents_text)
+    for node in ast.walk(tree):
+        if (
+                (
+                    isinstance(node, ast.FunctionDef) or
+                    isinstance(node, ast.AsyncFunctionDef)
+                ) and any((
+                    node.args.posonlyargs,
+                    node.args.args,
+                    node.args.kwonlyargs,
+                ))
+        ):
+            func_defs.add(Offset(node.lineno, node.col_offset))
+            for arg_type in ('args', 'kwonlyargs', 'posonlyargs'):
+                for idx, arg in enumerate(getattr(node.args, arg_type)):
+                    start = arg.lineno
+                    # we are at the last argument, we need to find the end of
+                    # the function def instead
+                    if idx+1 == len(getattr(node.args, arg_type)):
+                        end = None
+                    else:
+                        end = getattr(node.args, arg_type)[idx + 1].lineno - 1
+                    lines_to_check[start] = end
+
     tokens = src_to_tokens(contents_text)
     for idx, token in reversed_enumerate(tokens):
-        if token.src == 'def' and _is_multiline_def(tokens, idx):
-            offset = token.utf8_byte_offset
-            # check if it's an async def, then the async keyword does not
-            # change the offset, like a nested function would
-            if idx >= 2 and tokens[idx-2].src == 'async':
-                offset = tokens[idx-2].utf8_byte_offset
+        if token.offset in func_defs:
+            depth = 0
+            func_end_idx = idx
+            while depth or tokens[func_end_idx].src != ':':
+                if tokens[func_end_idx].src == '(':
+                    depth += 1
+                elif tokens[func_end_idx].src == ')':
+                    depth -= 1
+                func_end_idx += 1
 
-            # we found the start of a a FunctionDef
-            start_def, end_def = _find_outer_parens(tokens[idx:])
-            _fix_indent(
-                tokens,
-                start=start_def + idx,
-                end=end_def + idx,
-                indent=indent,
-                offset=offset,
-            )
+            multiline_def = tokens[func_end_idx].line > tokens[idx].line
+
+            if multiline_def:
+                _fix_indent(
+                    tokens,
+                    start=idx,
+                    end=func_end_idx,
+                    indent=indent,
+                    offset=token.utf8_byte_offset,
+                    lines_to_check=lines_to_check,
+                )
+                pass
 
     return tokens_to_src(tokens)
 
